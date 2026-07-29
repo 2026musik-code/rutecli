@@ -2,9 +2,11 @@ import express from "express";
 import path from "path";
 import fs from "fs/promises";
 import os from "os";
-import { spawn, ChildProcess } from "child_process";
+import { spawn, ChildProcess, exec } from "child_process";
+import { promisify } from "util";
 import { createServer as createViteServer } from "vite";
 
+const execAsync = promisify(exec);
 const app = express();
 const PORT = 3000;
 
@@ -45,6 +47,48 @@ let settings = {
 };
 
 let lastRotationTime = Date.now();
+
+let verificationStatus = {
+  status: "unverified",
+  directIp: "unknown",
+  proxyIp: "unknown",
+  message: ""
+};
+
+async function verifyConnection() {
+  if (!activeInstanceId) {
+    verificationStatus = { status: "unverified", directIp: "unknown", proxyIp: "unknown", message: "Tidak ada koneksi aktif" };
+    return;
+  }
+  
+  verificationStatus.status = "verifying";
+  verificationStatus.message = "Mengecek trafik via Xray...";
+  
+  try {
+    const { stdout: directOut } = await execAsync("curl -s --max-time 5 https://api.ipify.org");
+    const directIp = directOut.trim();
+    verificationStatus.directIp = directIp || "unknown";
+
+    const { stdout: proxyOut } = await execAsync("curl -s -x http://127.0.0.1:10809 --max-time 10 https://api.ipify.org");
+    const proxyIp = proxyOut.trim();
+    verificationStatus.proxyIp = proxyIp || "error";
+
+    if (proxyIp && proxyIp !== directIp && proxyIp.includes(".")) {
+      verificationStatus.status = "success";
+      verificationStatus.message = "Trafik berhasil dirouting melalui Xray (IP berubah).";
+    } else if (proxyIp === directIp) {
+      verificationStatus.status = "failed";
+      verificationStatus.message = "Trafik bocor: IP Proxy sama dengan IP Asli.";
+    } else {
+      verificationStatus.status = "failed";
+      verificationStatus.message = "Gagal mendapatkan IP dari proxy.";
+    }
+  } catch (error: any) {
+    verificationStatus.status = "failed";
+    verificationStatus.proxyIp = "error";
+    verificationStatus.message = `Verifikasi gagal: Pastikan SOCKS/HTTP port terbuka.`;
+  }
+}
 
 async function loadSettings() {
   try {
@@ -201,8 +245,14 @@ async function startXray(id: string) {
           const errorAcc = accounts.find(a => a.id === id);
           if (errorAcc) errorAcc.status = "error";
           activeInstanceId = null;
+          verificationStatus = { status: "unverified", directIp: "unknown", proxyIp: "unknown", message: "Koneksi terputus." };
        }
     });
+
+    // Run connection verification after 5 seconds to give Xray time to connect
+    setTimeout(() => {
+      verifyConnection();
+    }, 5000);
 
   } catch (e) {
     addLog("warn", "Execution failed, simulation mode active.", "ProcessManager");
@@ -242,7 +292,8 @@ app.get("/api/state", (req, res) => {
       uptime: `${h}h ${m}m ${s}s`,
       ping: Math.floor(latestLatency.latency),
       upload: latestBandwidth.upload * 1024,
-      download: latestBandwidth.download * 1024
+      download: latestBandwidth.download * 1024,
+      verification: verificationStatus
     },
     monitoring: {
       bandwidth: bandwidthHistory,
@@ -253,6 +304,11 @@ app.get("/api/state", (req, res) => {
 
 app.get("/api/settings", (req, res) => {
   res.json(settings);
+});
+
+app.post("/api/verify", async (req, res) => {
+  verifyConnection(); // runs in background
+  res.json({ success: true, message: "Verification started" });
 });
 
 app.post("/api/settings", async (req, res) => {

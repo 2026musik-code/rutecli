@@ -19,6 +19,12 @@ export interface SystemStats {
   ping: number;
   upload: number; // bytes/s
   download: number; // bytes/s
+  verification?: {
+    status: "unverified" | "verifying" | "success" | "failed";
+    directIp: string;
+    proxyIp: string;
+    message: string;
+  };
 }
 
 export interface LogEntry {

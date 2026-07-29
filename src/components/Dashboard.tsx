@@ -1,6 +1,6 @@
 import React from "react";
 import { SystemStats } from "../types";
-import { Activity, Cpu, HardDrive, Clock, ArrowUpRight, ArrowDownRight, Zap } from "lucide-react";
+import { Activity, Cpu, HardDrive, Clock, ArrowUpRight, ArrowDownRight, Zap, ShieldCheck, ShieldAlert, RefreshCw } from "lucide-react";
 
 interface DashboardProps {
   stats: SystemStats;
@@ -22,6 +22,17 @@ const StatCard = ({ title, value, icon, subtitle, colorClass }: { title: string,
 );
 
 export const DashboardView: React.FC<DashboardProps> = ({ stats }) => {
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    try {
+      await fetch("/api/verify", { method: "POST" });
+    } finally {
+      setTimeout(() => setIsVerifying(false), 2000);
+    }
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B/s';
     const k = 1024;
@@ -91,6 +102,59 @@ export const DashboardView: React.FC<DashboardProps> = ({ stats }) => {
             <h3 className="text-3xl font-bold text-white mt-1">{formatBytes(stats.upload)}</h3>
           </div>
         </div>
+      </div>
+
+      {/* Traffic Verification */}
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            Verifikasi Trafik (Xray)
+          </h2>
+          <button 
+            onClick={handleVerify}
+            disabled={isVerifying || stats.verification?.status === "verifying"}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isVerifying || stats.verification?.status === "verifying" ? "animate-spin" : ""}`} />
+            Cek Sekarang
+          </button>
+        </div>
+
+        {stats.verification ? (
+          <div className={`p-4 rounded-lg border ${stats.verification.status === "success" ? "bg-green-900/20 border-green-800/50" : stats.verification.status === "failed" ? "bg-red-900/20 border-red-800/50" : "bg-gray-800 border-gray-700"}`}>
+            <div className="flex items-start gap-3">
+              {stats.verification.status === "success" ? (
+                <ShieldCheck className="w-6 h-6 text-green-400 mt-1" />
+              ) : stats.verification.status === "failed" ? (
+                <ShieldAlert className="w-6 h-6 text-red-400 mt-1" />
+              ) : (
+                <Activity className="w-6 h-6 text-blue-400 mt-1 animate-pulse" />
+              )}
+              
+              <div>
+                <h3 className={`font-semibold ${stats.verification.status === "success" ? "text-green-400" : stats.verification.status === "failed" ? "text-red-400" : "text-gray-300"}`}>
+                  Status: {stats.verification.status.toUpperCase()}
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">{stats.verification.message}</p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 mt-3">
+                  <div className="bg-gray-950 p-2 rounded border border-gray-800 text-xs text-gray-300">
+                    <span className="text-gray-500">IP Asli (Direct):</span> <br/> 
+                    <span className="font-mono text-white">{stats.verification.directIp}</span>
+                  </div>
+                  <div className="bg-gray-950 p-2 rounded border border-gray-800 text-xs text-gray-300">
+                    <span className="text-gray-500">IP Xray (Proxy):</span> <br/> 
+                    <span className="font-mono text-white">{stats.verification.proxyIp}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-400">
+            Belum ada verifikasi yang dijalankan.
+          </div>
+        )}
       </div>
 
       {/* Local Connection Guide */}
