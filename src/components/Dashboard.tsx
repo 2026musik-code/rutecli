@@ -92,6 +92,30 @@ export const DashboardView: React.FC<DashboardProps> = ({ stats }) => {
           </div>
         </div>
       </div>
+
+      {/* Local Connection Guide */}
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 shadow-sm">
+        <h2 className="text-lg font-bold text-white mb-4">Cara Menggunakan Koneksi (Termux)</h2>
+        <p className="text-sm text-gray-400 mb-4">
+          Secara default, Termux tidak akan otomatis melewati koneksi Xray yang sedang aktif. Anda harus mengatur variabel lingkungan <code className="bg-gray-800 px-1 py-0.5 rounded text-gray-300">http_proxy</code> agar proses Termux dialihkan ke Xray.
+        </p>
+        <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 font-mono text-sm overflow-x-auto relative group">
+          <div className="text-gray-300 whitespace-pre-wrap">
+            <span className="text-purple-400">export</span> http_proxy="http://127.0.0.1:10809"<br />
+            <span className="text-purple-400">export</span> https_proxy="http://127.0.0.1:10809"<br />
+            <span className="text-purple-400">export</span> all_proxy="socks5://127.0.0.1:10808"
+          </div>
+          <button 
+            onClick={() => navigator.clipboard.writeText('export http_proxy="http://127.0.0.1:10809"\nexport https_proxy="http://127.0.0.1:10809"\nexport all_proxy="socks5://127.0.0.1:10808"')}
+            className="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-md text-xs transition-colors border border-gray-700 opacity-0 group-hover:opacity-100"
+          >
+            Copy
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Paste perintah di atas di terminal Termux Anda. Untuk Android secara keseluruhan, gunakan proxy 127.0.0.1:10809 di pengaturan WiFi, atau aplikasi seperti v2rayNG/NekoBox.
+        </p>
+      </div>
     </div>
   );
 };
