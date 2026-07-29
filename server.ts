@@ -114,7 +114,7 @@ async function startXray(id: string) {
 
   try {
     // Attempt to spawn xray in Termux (graceful fallback if not found)
-    xrayProcess = spawn("xray", ["-c", `configs/${id}.json`]);
+    xrayProcess = spawn("./xray", ["-c", `configs/${id}.json`]);
     
     xrayProcess.on('error', (err) => {
        addLog("warn", `xray binary not found. Running in simulation mode.`, "ProcessManager");

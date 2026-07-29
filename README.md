@@ -47,8 +47,8 @@ npm run start
 Setelah instalasi selesai atau setelah menjalankan perintah start, server akan berjalan di background.
 Buka browser favorit kamu (Chrome, Firefox, Brave, dll) dan akses alamat berikut:
 
-👉 **http://127.0.0.1:3000**  
-*(Atau http://localhost:3000)*
+👉 **http://127.0.0.1:20111**  
+*(Atau http://localhost:20111)*
 
 ---
 
