@@ -69,7 +69,7 @@ async function verifyConnection() {
     const directIp = directOut.trim();
     verificationStatus.directIp = directIp || "unknown";
 
-    const { stdout: proxyOut } = await execAsync("curl -s -x http://127.0.0.1:10809 --max-time 10 https://api.ipify.org");
+    const { stdout: proxyOut } = await execAsync("curl -s -x socks5h://127.0.0.1:10808 --max-time 10 https://api.ipify.org");
     const proxyIp = proxyOut.trim();
     verificationStatus.proxyIp = proxyIp || "error";
 
@@ -86,7 +86,8 @@ async function verifyConnection() {
   } catch (error: any) {
     verificationStatus.status = "failed";
     verificationStatus.proxyIp = "error";
-    verificationStatus.message = `Verifikasi gagal: Pastikan SOCKS/HTTP port terbuka.`;
+    verificationStatus.message = `Verifikasi gagal: Xray SOCKS5 proxy (10808) tidak merespons. Pastikan akun VPN aktif dan terhubung dengan internet.`;
+    addLog("error", `Verification error: ${error.message}`, "Verifier");
   }
 }
 

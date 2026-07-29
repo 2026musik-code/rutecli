@@ -11,6 +11,7 @@ type Tab = "dashboard" | "accounts" | "monitoring" | "logs" | "settings";
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const [appState, setAppState] = useState({
     stats: { cpuUsage: 0, memUsage: 0, activeInstance: null, uptime: "0s", ping: 0, upload: 0, download: 0 },
     accounts: [],
@@ -22,10 +23,13 @@ export default function App() {
     const fetchState = async () => {
       try {
         const res = await fetch("/api/state");
+        if (!res.ok) throw new Error("Server returned " + res.status);
         const data = await res.json();
         setAppState(data);
+        setIsOffline(false);
       } catch (e) {
         console.error("Failed to fetch state", e);
+        setIsOffline(true);
       }
     };
     fetchState();
@@ -151,6 +155,13 @@ export default function App() {
             <span className="font-bold text-lg text-white">Xray Orchestrator</span>
           </button>
         </header>
+
+        {isOffline && (
+          <div className="bg-red-900/50 border-b border-red-500/50 p-2 text-center text-red-200 text-sm flex items-center justify-center space-x-2">
+            <Server className="w-4 h-4" />
+            <span>Connection to Xray backend lost. Attempting to reconnect...</span>
+          </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 w-full">
