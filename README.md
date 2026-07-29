@@ -65,7 +65,23 @@ Buka browser favorit kamu (Chrome, Firefox, Brave, dll) dan akses alamat berikut
 
 ---
 
-## ⚠️ Catatan Penting
+## 🛑 Cara Menghentikan Server & Memperbaiki Error Port
+
+Jika kamu melihat error seperti `Error: listen EADDRINUSE: address already in use 0.0.0.0:3000` atau port `20111`, itu artinya server sebelumnya masih berjalan di latar belakang (background).
+
+Untuk menghentikannya, jalankan perintah ini di Termux:
+
+```bash
+pkill node
+```
+*(Perintah di atas akan mematikan semua proses Node.js yang sedang berjalan).*
+
+Atau, jika kamu sedang berada di layar terminal tempat server berjalan, kamu cukup menekan tombol:
+**`CTRL + C`** pada keyboard Termux untuk mematikannya.
+
+Setelah itu, kamu bisa menjalankan kembali aplikasinya dengan perintah `npm run start` atau menjalankan ulang script installernya.
+
+---
 
 - **Background Process**: Agar Xray tetap berjalan meskipun kamu membuka aplikasi lain, pastikan Termux tidak dimatikan oleh sistem penghemat baterai (Battery Saver). Buka info aplikasi Termux > Battery > set ke "Unrestricted" (Tidak dibatasi).
 - **Xray Core**: Jika instalasi `xray` gagal melalui script karena perbedaan repository Termux, kamu bisa menginstal manual dengan perintah: `pkg install root-repo && pkg install xray`.
