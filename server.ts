@@ -38,6 +38,27 @@ let uptimeSeconds = 0;
 let bandwidthHistory: any[] = [];
 let latencyHistory: any[] = [];
 
+let settings = {
+  rotationIntervalMinutes: 5,
+  autoFailover: true,
+  healthCheckIntervalSeconds: 30
+};
+
+let lastRotationTime = Date.now();
+
+async function loadSettings() {
+  try {
+    const data = await fs.readFile("settings.json", "utf-8");
+    settings = { ...settings, ...JSON.parse(data) };
+  } catch (e) {
+    await saveSettings();
+  }
+}
+
+async function saveSettings() {
+  await fs.writeFile("settings.json", JSON.stringify(settings, null, 2));
+}
+
 // Simulate ping and latency
 setInterval(() => {
   uptimeSeconds += 2;
@@ -47,20 +68,57 @@ setInterval(() => {
   if (latencyHistory.length > 20) latencyHistory.shift();
   
   if (activeInstanceId) {
-    bandwidthHistory.push({
-      time: timeStr,
-      upload: Math.random() * 50 + 10,
-      download: Math.random() * 200 + 50
-    });
-    latencyHistory.push({
-      time: timeStr,
-      latency: 40 + Math.random() * 20
-    });
+    const isErrorSimulated = Math.random() > 0.95; // 5% chance of simulated network error
+    if (isErrorSimulated) {
+      addLog("error", `Health check failed: connection timeout on active config`, "HealthChecker");
+      if (settings.autoFailover) {
+        addLog("warn", `Triggering auto-failover due to network error...`, "Orchestrator");
+        rotateToNextAccount();
+      } else {
+        const errorAcc = accounts.find(a => a.id === activeInstanceId);
+        if (errorAcc) errorAcc.status = "error";
+      }
+    } else {
+      bandwidthHistory.push({
+        time: timeStr,
+        upload: Math.random() * 50 + 10,
+        download: Math.random() * 200 + 50
+      });
+      latencyHistory.push({
+        time: timeStr,
+        latency: 40 + Math.random() * 20
+      });
+    }
   } else {
     bandwidthHistory.push({ time: timeStr, upload: 0, download: 0 });
     latencyHistory.push({ time: timeStr, latency: 0 });
   }
+
+  // Auto Rotation Logic
+  if (settings.rotationIntervalMinutes > 0 && activeInstanceId) {
+    const elapsedMinutes = (Date.now() - lastRotationTime) / 60000;
+    if (elapsedMinutes >= settings.rotationIntervalMinutes) {
+      addLog("info", `Auto-rotation triggered after ${settings.rotationIntervalMinutes} minutes.`, "Scheduler");
+      rotateToNextAccount();
+    }
+  }
 }, 2000);
+
+async function rotateToNextAccount() {
+  if (accounts.length <= 1) {
+    addLog("warn", "Cannot rotate: only 1 or 0 accounts available.", "Scheduler");
+    return;
+  }
+  
+  const currentIndex = accounts.findIndex(a => a.id === activeInstanceId);
+  const nextIndex = (currentIndex + 1) % accounts.length;
+  const nextAcc = accounts[nextIndex];
+  
+  if (nextAcc) {
+    await startXray(nextAcc.id);
+  }
+}
+
 
 function addLog(level: "info" | "warn" | "error", message: string, source: string = "Orchestrator") {
   logs.unshift({
@@ -177,6 +235,16 @@ app.get("/api/state", (req, res) => {
   });
 });
 
+app.get("/api/settings", (req, res) => {
+  res.json(settings);
+});
+
+app.post("/api/settings", async (req, res) => {
+  settings = { ...settings, ...req.body };
+  await saveSettings();
+  res.json({ success: true, settings });
+});
+
 app.post("/api/accounts", async (req, res) => {
   const { name, content } = req.body;
   const id = Date.now().toString();
@@ -249,6 +317,7 @@ app.post("/api/logs/clear", (req, res) => {
 
 // Start Server & Vite
 async function startServer() {
+  await loadSettings();
   await loadDb();
   addLog("info", "Xray Orchestrator Backend Started", "System");
 

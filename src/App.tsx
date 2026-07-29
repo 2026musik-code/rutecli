@@ -3,6 +3,7 @@ import { DashboardView } from "./components/Dashboard";
 import { AccountsView } from "./components/Accounts";
 import { MonitoringView } from "./components/Monitoring";
 import { LogsView } from "./components/Logs";
+import { SettingsView } from "./components/Settings";
 import { Activity, Server, Settings, Terminal, Radio, Menu, X } from "lucide-react";
 
 type Tab = "dashboard" | "accounts" | "monitoring" | "logs" | "settings";
@@ -43,12 +44,7 @@ export default function App() {
       case "logs":
         return <LogsView logs={appState.logs} />;
       case "settings":
-        return (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <Settings className="w-12 h-12 mb-4 opacity-50" />
-            <p>Settings configuration panel coming soon.</p>
-          </div>
-        );
+        return <SettingsView />;
       default:
         return <DashboardView stats={appState.stats} />;
     }
