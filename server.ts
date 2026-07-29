@@ -174,6 +174,22 @@ async function startXray(id: string) {
     // Attempt to spawn xray in Termux (graceful fallback if not found)
     xrayProcess = spawn("./xray", ["-c", `configs/${id}.json`]);
     
+    if (xrayProcess.stdout) {
+      xrayProcess.stdout.on('data', (data) => {
+        const msg = data.toString().trim();
+        if (msg) addLog("info", msg, "XrayEngine");
+      });
+    }
+
+    if (xrayProcess.stderr) {
+      xrayProcess.stderr.on('data', (data) => {
+        const msg = data.toString().trim();
+        // Check if message is a connection error
+        const level = msg.toLowerCase().includes("error") || msg.toLowerCase().includes("fail") || msg.toLowerCase().includes("rejected") ? "error" : "warn";
+        if (msg) addLog(level, msg, "XrayEngine");
+      });
+    }
+
     xrayProcess.on('error', (err) => {
        addLog("warn", `xray binary not found. Running in simulation mode.`, "ProcessManager");
        // Keeping it active logically
@@ -249,22 +265,169 @@ app.post("/api/accounts", async (req, res) => {
   const { name, content } = req.body;
   const id = Date.now().toString();
   
-  // Basic URL parsing to find address/port if it's a share link
   let address = "unknown";
   let port = 443;
   let type = "unknown";
+  let finalContent = content;
+  let configName = name;
   
-  if (content.startsWith("vmess://") || content.startsWith("vless://") || content.startsWith("trojan://")) {
-    type = content.split("://")[0];
-    address = "auto-parsed.com";
+  if (content.startsWith("vless://")) {
+    type = "vless";
+    try {
+      const [main, hashName] = content.split('#');
+      if (!configName && hashName) configName = decodeURIComponent(hashName);
+      const rest = main.replace("vless://", "");
+      const [auth, serverInfo] = rest.split('@');
+      const [hostPort, queryStr] = serverInfo.split('?');
+      const [h, p] = hostPort.split(':');
+      address = h;
+      port = parseInt(p) || 443;
+      
+      const params = new URLSearchParams(queryStr);
+      
+      const configObj = {
+        inbounds: [
+          { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
+          { port: 10809, listen: "127.0.0.1", protocol: "http" }
+        ],
+        outbounds: [{
+          protocol: "vless",
+          settings: {
+            vnext: [{
+              address: h,
+              port: port,
+              users: [{ id: auth, encryption: "none" }]
+            }]
+          },
+          streamSettings: {
+            network: params.get("type") || "tcp",
+            security: params.get("security") || "none",
+            tlsSettings: params.get("security") === "tls" ? {
+              serverName: params.get("sni") || params.get("host") || h,
+              fingerprint: params.get("fp") || "chrome"
+            } : undefined,
+            wsSettings: params.get("type") === "ws" ? {
+              path: decodeURIComponent(params.get("path") || "/"),
+              headers: { Host: params.get("host") || params.get("sni") || h }
+            } : undefined
+          }
+        }]
+      };
+      finalContent = JSON.stringify(configObj, null, 2);
+    } catch(e) {
+      console.error("Failed to parse vless:", e);
+    }
+  } else if (content.startsWith("trojan://")) {
+    type = "trojan";
+    try {
+      const [main, hashName] = content.split('#');
+      if (!configName && hashName) configName = decodeURIComponent(hashName);
+      const rest = main.replace("trojan://", "");
+      const [auth, serverInfo] = rest.split('@');
+      const [hostPort, queryStr] = serverInfo.split('?');
+      const [h, p] = hostPort.split(':');
+      address = h;
+      port = parseInt(p) || 443;
+      
+      const params = new URLSearchParams(queryStr);
+      
+      const configObj = {
+        inbounds: [
+          { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
+          { port: 10809, listen: "127.0.0.1", protocol: "http" }
+        ],
+        outbounds: [{
+          protocol: "trojan",
+          settings: {
+            servers: [{
+              address: h,
+              port: port,
+              password: auth
+            }]
+          },
+          streamSettings: {
+            network: params.get("type") || "tcp",
+            security: params.get("security") || "tls",
+            tlsSettings: {
+              serverName: params.get("sni") || params.get("host") || h,
+              fingerprint: params.get("fp") || "chrome"
+            },
+            wsSettings: params.get("type") === "ws" ? {
+              path: decodeURIComponent(params.get("path") || "/"),
+              headers: { Host: params.get("host") || params.get("sni") || h }
+            } : undefined
+          }
+        }]
+      };
+      finalContent = JSON.stringify(configObj, null, 2);
+    } catch(e) {
+      console.error("Failed to parse trojan:", e);
+    }
+  } else if (content.startsWith("vmess://")) {
+    type = "vmess";
+    try {
+      const base64Str = content.replace("vmess://", "");
+      const jsonStr = Buffer.from(base64Str, "base64").toString("utf-8");
+      const vmessObj = JSON.parse(jsonStr);
+      
+      if (!configName && vmessObj.ps) configName = vmessObj.ps;
+      address = vmessObj.add;
+      port = parseInt(vmessObj.port) || 443;
+      
+      const configObj = {
+        inbounds: [
+          { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
+          { port: 10809, listen: "127.0.0.1", protocol: "http" }
+        ],
+        outbounds: [{
+          protocol: "vmess",
+          settings: {
+            vnext: [{
+              address: vmessObj.add,
+              port: port,
+              users: [{ id: vmessObj.id, alterId: parseInt(vmessObj.aid) || 0, security: "auto" }]
+            }]
+          },
+          streamSettings: {
+            network: vmessObj.net || "tcp",
+            security: vmessObj.tls === "tls" ? "tls" : "none",
+            tlsSettings: vmessObj.tls === "tls" ? {
+              serverName: vmessObj.sni || vmessObj.host || vmessObj.add,
+              fingerprint: vmessObj.fp || "chrome"
+            } : undefined,
+            wsSettings: vmessObj.net === "ws" ? {
+              path: vmessObj.path || "/",
+              headers: { Host: vmessObj.host || vmessObj.sni || vmessObj.add }
+            } : undefined
+          }
+        }]
+      };
+      finalContent = JSON.stringify(configObj, null, 2);
+    } catch(e) {
+      console.error("Failed to parse vmess:", e);
+    }
   } else {
     type = "json";
     address = "localhost";
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.outbounds && parsed.outbounds[0]) {
+        type = parsed.outbounds[0].protocol;
+        const out = parsed.outbounds[0];
+        if (out.settings && out.settings.vnext && out.settings.vnext[0]) {
+          address = out.settings.vnext[0].address;
+          port = out.settings.vnext[0].port;
+        } else if (out.settings && out.settings.servers && out.settings.servers[0]) {
+          address = out.settings.servers[0].address;
+          port = out.settings.servers[0].port;
+        }
+      }
+    } catch (e) {}
   }
 
   const newAcc: Account = {
     id,
-    name: name || `Config-${id.slice(-4)}`,
+    name: configName || `Config-${id.slice(-4)}`,
     type,
     address,
     port,
@@ -275,8 +438,7 @@ app.post("/api/accounts", async (req, res) => {
   accounts.push(newAcc);
   await saveDb();
   
-  // Write to configs folder
-  await fs.writeFile(`configs/${id}.json`, content);
+  await fs.writeFile(`configs/${id}.json`, finalContent);
   addLog("info", `Added new configuration: ${newAcc.name}`, "API");
   
   res.json({ success: true, account: newAcc });

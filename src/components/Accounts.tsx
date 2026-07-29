@@ -111,11 +111,11 @@ export const AccountsView: React.FC<AccountsProps> = ({ accounts }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end space-x-2">
                       {acc.status !== 'active' ? (
                         <button 
                           onClick={() => handleStart(acc.id)}
-                          className="p-1.5 hover:bg-gray-600 rounded text-gray-400 hover:text-green-400 transition-colors" 
+                          className="p-2 hover:bg-gray-600 bg-gray-700/50 rounded-lg text-gray-300 hover:text-green-400 transition-colors" 
                           title="Start Instance"
                         >
                           <Play className="w-4 h-4" />
@@ -123,18 +123,18 @@ export const AccountsView: React.FC<AccountsProps> = ({ accounts }) => {
                       ) : (
                         <button 
                           onClick={() => handleStop(acc.id)}
-                          className="p-1.5 hover:bg-gray-600 rounded text-gray-400 hover:text-yellow-400 transition-colors" 
+                          className="p-2 hover:bg-gray-600 bg-gray-700/50 rounded-lg text-green-400 hover:text-yellow-400 transition-colors" 
                           title="Stop Instance"
                         >
                           <Square className="w-4 h-4" />
                         </button>
                       )}
-                      <button className="p-1.5 hover:bg-gray-600 rounded text-gray-400 hover:text-blue-400 transition-colors" title="Edit Config">
+                      <button className="p-2 hover:bg-gray-600 bg-gray-700/50 rounded-lg text-gray-300 hover:text-blue-400 transition-colors" title="Edit Config">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleDelete(acc.id)}
-                        className="p-1.5 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors" 
+                        className="p-2 hover:bg-gray-600 bg-gray-700/50 rounded-lg text-gray-300 hover:text-red-400 transition-colors" 
                         title="Delete Config"
                       >
                         <Trash2 className="w-4 h-4" />
