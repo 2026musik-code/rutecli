@@ -3,12 +3,14 @@ import { ReactNode } from "react";
 export interface Account {
   id: string;
   name: string;
-  type: "vmess" | "vless" | "trojan" | "shadowsocks";
+  type: "vmess" | "vless" | "trojan" | "shadowsocks" | "json";
   address: string;
   port: number;
   status: "active" | "inactive" | "error";
   latency?: number;
   group: string;
+  host?: string;
+  sni?: string;
 }
 
 export interface SystemStats {

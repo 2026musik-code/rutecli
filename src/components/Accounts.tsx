@@ -77,9 +77,14 @@ export const AccountsView: React.FC<AccountsProps> = ({ accounts }) => {
                       <div className={`p-2 rounded-lg ${acc.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
                         <Server className="w-5 h-5" />
                       </div>
-                      <div>
+                      <div className="flex flex-col">
                         <p className="text-sm font-medium text-white">{acc.name}</p>
-                        <p className="text-xs text-gray-500">{acc.address}:{acc.port}</p>
+                        <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                          <p><span className="text-gray-600">Addr:</span> {acc.address}:{acc.port}</p>
+                          {(acc.host || acc.sni) && (
+                            <p><span className="text-gray-600">Host/SNI:</span> {acc.host || '-'} / {acc.sni || '-'}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>

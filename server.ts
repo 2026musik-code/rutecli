@@ -343,6 +343,8 @@ app.post("/api/accounts", async (req, res) => {
   let type = "unknown";
   let finalContent = content;
   let configName = name;
+  let hostStr = "";
+  let sniStr = "";
   
   if (content.startsWith("vless://")) {
     type = "vless";
@@ -357,10 +359,12 @@ app.post("/api/accounts", async (req, res) => {
       port = parseInt(p) || 443;
       
       const params = new URLSearchParams(queryStr);
+      hostStr = params.get("host") || "";
+      sniStr = params.get("sni") || "";
       
       const configObj = {
         dns: {
-          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+          servers: ["8.8.8.8", "1.1.1.1"]
         },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
@@ -407,10 +411,12 @@ app.post("/api/accounts", async (req, res) => {
       port = parseInt(p) || 443;
       
       const params = new URLSearchParams(queryStr);
+      hostStr = params.get("host") || "";
+      sniStr = params.get("sni") || "";
       
       const configObj = {
         dns: {
-          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+          servers: ["8.8.8.8", "1.1.1.1"]
         },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
@@ -454,10 +460,12 @@ app.post("/api/accounts", async (req, res) => {
       if (!configName && vmessObj.ps) configName = vmessObj.ps;
       address = vmessObj.add;
       port = parseInt(vmessObj.port) || 443;
+      hostStr = vmessObj.host || "";
+      sniStr = vmessObj.sni || "";
       
       const configObj = {
         dns: {
-          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+          servers: ["8.8.8.8", "1.1.1.1"]
         },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
@@ -493,7 +501,7 @@ app.post("/api/accounts", async (req, res) => {
     }
   } else {
     type = "json";
-    address = "localhost";
+    address = "unknown";
     try {
       const parsed = JSON.parse(content);
       if (parsed.outbounds && parsed.outbounds[0]) {
@@ -517,7 +525,9 @@ app.post("/api/accounts", async (req, res) => {
     address,
     port,
     status: "inactive",
-    group: "Default"
+    group: "Default",
+    host: hostStr,
+    sni: sniStr
   };
   
   accounts.push(newAcc);
