@@ -359,6 +359,9 @@ app.post("/api/accounts", async (req, res) => {
       const params = new URLSearchParams(queryStr);
       
       const configObj = {
+        dns: {
+          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+        },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
           { port: 10809, listen: "127.0.0.1", protocol: "http" }
@@ -381,6 +384,7 @@ app.post("/api/accounts", async (req, res) => {
             } : undefined,
             wsSettings: params.get("type") === "ws" ? {
               path: decodeURIComponent(params.get("path") || "/"),
+              host: params.get("host") || params.get("sni") || h,
               headers: { Host: params.get("host") || params.get("sni") || h }
             } : undefined
           }
@@ -405,6 +409,9 @@ app.post("/api/accounts", async (req, res) => {
       const params = new URLSearchParams(queryStr);
       
       const configObj = {
+        dns: {
+          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+        },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
           { port: 10809, listen: "127.0.0.1", protocol: "http" }
@@ -427,6 +434,7 @@ app.post("/api/accounts", async (req, res) => {
             },
             wsSettings: params.get("type") === "ws" ? {
               path: decodeURIComponent(params.get("path") || "/"),
+              host: params.get("host") || params.get("sni") || h,
               headers: { Host: params.get("host") || params.get("sni") || h }
             } : undefined
           }
@@ -448,6 +456,9 @@ app.post("/api/accounts", async (req, res) => {
       port = parseInt(vmessObj.port) || 443;
       
       const configObj = {
+        dns: {
+          servers: ["8.8.8.8", "1.1.1.1", "localhost"]
+        },
         inbounds: [
           { port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true } },
           { port: 10809, listen: "127.0.0.1", protocol: "http" }
@@ -470,6 +481,7 @@ app.post("/api/accounts", async (req, res) => {
             } : undefined,
             wsSettings: vmessObj.net === "ws" ? {
               path: vmessObj.path || "/",
+              host: vmessObj.host || vmessObj.sni || vmessObj.add,
               headers: { Host: vmessObj.host || vmessObj.sni || vmessObj.add }
             } : undefined
           }
