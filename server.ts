@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs/promises";
 import os from "os";
+import dns from "dns";
 import { spawn, ChildProcess, exec } from "child_process";
 import { promisify } from "util";
 import { createServer as createViteServer } from "vite";
@@ -362,6 +363,14 @@ app.post("/api/accounts", async (req, res) => {
       hostStr = params.get("host") || "";
       sniStr = params.get("sni") || "";
       
+      let resolvedAddress = h;
+      try {
+        const lookupRes = await dns.promises.lookup(h, { family: 4 });
+        if (lookupRes.address) resolvedAddress = lookupRes.address;
+      } catch (err) {
+        console.warn(`Could not resolve ${h}`, err);
+      }
+      
       const configObj = {
         dns: {
           servers: ["8.8.8.8", "1.1.1.1"]
@@ -374,7 +383,7 @@ app.post("/api/accounts", async (req, res) => {
           protocol: "vless",
           settings: {
             vnext: [{
-              address: h,
+              address: resolvedAddress,
               port: port,
               users: [{ id: auth, encryption: "none" }]
             }]
@@ -414,6 +423,14 @@ app.post("/api/accounts", async (req, res) => {
       hostStr = params.get("host") || "";
       sniStr = params.get("sni") || "";
       
+      let resolvedAddress = h;
+      try {
+        const lookupRes = await dns.promises.lookup(h, { family: 4 });
+        if (lookupRes.address) resolvedAddress = lookupRes.address;
+      } catch (err) {
+        console.warn(`Could not resolve ${h}`, err);
+      }
+      
       const configObj = {
         dns: {
           servers: ["8.8.8.8", "1.1.1.1"]
@@ -426,7 +443,7 @@ app.post("/api/accounts", async (req, res) => {
           protocol: "trojan",
           settings: {
             servers: [{
-              address: h,
+              address: resolvedAddress,
               port: port,
               password: auth
             }]
@@ -463,6 +480,14 @@ app.post("/api/accounts", async (req, res) => {
       hostStr = vmessObj.host || "";
       sniStr = vmessObj.sni || "";
       
+      let resolvedAddress = vmessObj.add;
+      try {
+        const lookupRes = await dns.promises.lookup(vmessObj.add, { family: 4 });
+        if (lookupRes.address) resolvedAddress = lookupRes.address;
+      } catch (err) {
+        console.warn(`Could not resolve ${vmessObj.add}`, err);
+      }
+      
       const configObj = {
         dns: {
           servers: ["8.8.8.8", "1.1.1.1"]
@@ -475,7 +500,7 @@ app.post("/api/accounts", async (req, res) => {
           protocol: "vmess",
           settings: {
             vnext: [{
-              address: vmessObj.add,
+              address: resolvedAddress,
               port: port,
               users: [{ id: vmessObj.id, alterId: parseInt(vmessObj.aid) || 0, security: "auto" }]
             }]

@@ -1,0 +1,57 @@
+{
+  "dns": {
+    "servers": [
+      "8.8.8.8",
+      "1.1.1.1"
+    ]
+  },
+  "inbounds": [
+    {
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "udp": true
+      }
+    },
+    {
+      "port": 10809,
+      "listen": "127.0.0.1",
+      "protocol": "http"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "uangku.co.id",
+            "port": 443,
+            "users": [
+              {
+                "id": "d342d11e-d424-4583-b36e-524ab1f0afa4",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "tcp.azkhavps.my.id",
+          "fingerprint": "randomized"
+        },
+        "wsSettings": {
+          "path": "/47.74.254.191-8900",
+          "host": "tcp.azkhavps.my.id",
+          "headers": {
+            "Host": "tcp.azkhavps.my.id"
+          }
+        }
+      }
+    }
+  ]
+}

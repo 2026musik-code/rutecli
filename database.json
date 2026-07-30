@@ -1,0 +1,31 @@
+[
+  {
+    "id": "1785387511642",
+    "name": "Sg",
+    "type": "vless",
+    "address": "uangku.co.id",
+    "port": 443,
+    "status": "active",
+    "group": "Default"
+  },
+  {
+    "id": "1785389778804",
+    "name": "PUSATMEDIA",
+    "type": "vless",
+    "address": "uangku.co.id",
+    "port": 443,
+    "status": "inactive",
+    "group": "Default"
+  },
+  {
+    "id": "1785392204203",
+    "name": "Custom Proxy",
+    "type": "vless",
+    "address": "uangku.co.id",
+    "port": 443,
+    "status": "inactive",
+    "group": "Default",
+    "host": "tcp.azkhavps.my.id",
+    "sni": "tcp.azkhavps.my.id"
+  }
+]
